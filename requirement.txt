@@ -1,0 +1,6 @@
+streamlit
+pytube
+opencv-python
+numpy
+moviepy
+keras
