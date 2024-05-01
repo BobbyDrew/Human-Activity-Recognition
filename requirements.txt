@@ -1,6 +1,6 @@
-opencv-python==4.5.3.56
-streamlit==0.90.0
-pytube==11.0.0
-numpy==1.21.4
-moviepy==1.0.3
-keras==2.6.0
+opencv-python
+streamlit
+pytube
+numpy
+moviepy
+keras
