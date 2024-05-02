@@ -4,4 +4,4 @@ pytube==15.0.0
 numpy==1.26.4
 moviepy==1.0.3
 keras==3.3.3
-tensorflow==2.9.1  # You can adjust the version number as needed
+tensorflow==2.16.1  
