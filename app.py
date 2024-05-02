@@ -6,11 +6,18 @@ from collections import deque
 import os
 import base64
 from tensorflow.keras.models import load_model
-from tensorflow.keras.initializers import Orthogonal  # If you need custom initializers
+from tensorflow.keras.initializers import Orthogonal
 
-# Load the model
-model_file_path = "convlstm_model_89.h5"  # Ensure this path is accessible in your deployment environment
-convlstm_model = load_model(model_file_path)
+# Define custom objects if your model uses any
+custom_objects = {'Orthogonal': Orthogonal(gain=1.0, seed=None)}
+
+# Load the model, ensuring the path is accessible in your deployment environment
+model_file_path = "convlstm_model_89.h5"
+try:
+    convlstm_model = load_model(model_file_path, custom_objects=custom_objects)
+except Exception as e:
+    print(f"Error loading the model: {e}")
+    convlstm_model = None  # Handle cases where the model isn't loaded
 
 # Define constants
 IMAGE_HEIGHT = 64
@@ -70,50 +77,43 @@ def get_binary_file_downloader_html(file_path, title="Download File"):
 
 def main():
     st.title("Human Activity Prediction")
-    overview = st.sidebar.checkbox("Overview of the Project")
-    if overview:
+    if st.sidebar.checkbox("Overview of the Project"):
         show_overview()
 
-    add_selectbox = st.sidebar.selectbox("How would you like to upload a video?", ("YouTube URL", "Local Device", "Live Camera"))
-    handle_video_upload(add_selectbox)
-
-def show_overview():
-    st.header("Project Overview")
-    st.write("""
-        This project aims to predict human activity from videos using a convolutional LSTM model. 
-        Activities such as Biking, Diving, Golf Swing, and Pizza Tossing can be recognized.
-    """)
-    st.image('path_to_images_directory', caption='Activity Examples', use_column_width=True)
-
-def handle_video_upload(upload_type):
+    upload_type = st.sidebar.selectbox("How would you like to upload a video?", ("YouTube URL", "Local Device", "Live Camera"))
     if upload_type == "YouTube URL":
-        youtube_url = st.text_input("Enter the YouTube URL:")
-        if youtube_url and st.button("Download YouTube Video"):
-            process_youtube_video(youtube_url)
+        handle_youtube_upload()
     elif upload_type == "Local Device":
-        uploaded_file = st.file_uploader("Upload a video", type=['mp4'])
-        if uploaded_file:
-            process_local_video(uploaded_file)
+        handle_local_upload()
     elif upload_type == "Live Camera":
         st.write("Live camera feed not implemented in this script.")
 
-def process_youtube_video(youtube_url):
-    test_videos_directory = 'test_videos'
-    os.makedirs(test_videos_directory, exist_ok=True)
-    video_file_path, video_title = download_youtube_video(youtube_url, test_videos_directory)
-    st.success(f"Download complete! Video saved as: {video_title}.mp4")
-    process_video(test_videos_directory, video_file_path, video_title)
+def show_overview():
+    st.header("Project Overview")
+    st.write("This project aims to predict human activity from videos using a convolutional LSTM model. "
+             "Activities such as Biking, Diving, Golf Swing, and Pizza Tossing can be recognized.")
 
-def process_local_video(uploaded_file):
-    test_videos_directory = 'test_videos'
-    os.makedirs(test_videos_directory, exist_ok=True)
-    video_file_path = os.path.join(test_videos_directory, uploaded_file.name)
-    with open(video_file_path, "wb") as f:
-        f.write(uploaded_file.read())
-    st.success(f"You uploaded: {uploaded_file.name}")
-    process_video(test_videos_directory, video_file_path, uploaded_file.name)
+def handle_youtube_upload():
+    youtube_url = st.text_input("Enter the YouTube URL:")
+    if youtube_url and st.button("Download YouTube Video"):
+        test_videos_directory = 'test_videos'
+        os.makedirs(test_videos_directory, exist_ok=True)
+        video_file_path, video_title = download_youtube_video(youtube_url, test_videos_directory)
+        st.success(f"Download complete! Video saved as: {video_title}.mp4")
+        output_video_file_path = perform_video_recognition(test_videos_directory, video_file_path, video_title)
 
-def process_video(directory, video_file_path, title):
+def handle_local_upload():
+    uploaded_file = st.file_uploader("Upload a video", type=['mp4'])
+    if uploaded_file:
+        test_videos_directory = 'test_videos'
+        os.makedirs(test_videos_directory, exist_ok=True)
+        video_file_path = os.path.join(test_videos_directory, uploaded_file.name)
+        with open(video_file_path, "wb") as f:
+            f.write(uploaded_file.read())
+        st.success(f"You uploaded: {uploaded_file.name}")
+        output_video_file_path = perform_video_recognition(test_videos_directory, video_file_path, uploaded_file.name)
+
+def perform_video_recognition(directory, video_file_path, title):
     output_video_file_path = f'{directory}/{title}-Output-SeqLen{SEQUENCE_LENGTH}.mp4'
     output_video_file_path = perform_action_recognition(video_file_path, output_video_file_path)
     st.success("Prediction complete! You can download the output video below.")
