@@ -4,3 +4,4 @@ pytube
 numpy
 moviepy
 keras
+opencv-python-headless==4.x.x
