@@ -9,7 +9,7 @@ from moviepy.editor import VideoFileClip
 from keras.models import load_model
 
 # Load the model
-model_file_path = "C:/Users/veeri/OneDrive - Lovely Professional University/Desktop/Final Project/convlstm_model_89.h5"  # Change this path accordingly
+model_file_path = "convlstm_model_89.h5"  # Change this path accordingly
 convlstm_model = load_model(model_file_path)
 
 # Define constants
