@@ -13,7 +13,6 @@ else:
     reload(sys)
     sys.setdefaultencoding('utf-8')
 
-# Import necessary libraries
 import streamlit as st
 from pytube import YouTube
 import cv2
@@ -22,11 +21,13 @@ from collections import deque
 import os
 import base64
 from tensorflow.keras.models import load_model
+from tensorflow.keras.initializers import Orthogonal  # Import Orthogonal
 
-# Load the model
+# Load the model with custom object
 model_file_path = "convlstm_model_89.h5"  # Adjust the path as necessary
+custom_objects = {'Orthogonal': Orthogonal(gain=1.0, seed=None)}  # Define custom objects
 try:
-    convlstm_model = load_model(model_file_path)
+    convlstm_model = load_model(model_file_path, custom_objects=custom_objects)
 except Exception as e:
     st.error(f"Failed to load the model due to: {e}")
     convlstm_model = None
