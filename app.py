@@ -25,19 +25,22 @@ from tensorflow.keras.layers import ConvLSTM2D
 from tensorflow.keras.models import load_model
 from tensorflow.keras.initializers import Orthogonal
 
-# Custom ConvLSTM2D layer to handle potential custom parameters like 'time_major'
+# Define custom ConvLSTM2D if needed (not shown here as the problem seems to be with the Orthogonal initializer)
+# Custom ConvLSTM2D class to handle 'time_major' argument
 class CustomConvLSTM2D(ConvLSTM2D):
     def __init__(self, *args, **kwargs):
-        # Remove the unrecognized argument before calling the super class constructor
+        # Remove the unrecognized argument before calling the superclass constructor
         kwargs.pop('time_major', None)
         super(CustomConvLSTM2D, self).__init__(*args, **kwargs)
-
-# Custom objects dictionary to include any custom or modified layers
-custom_objects = {'CustomConvLSTM2D': CustomConvLSTM2D}
+# Define the correct handling for Orthogonal custom initializer
+custom_objects = {
+    'Orthogonal': Orthogonal(gain=1.0, seed=None)
+}
 
 # Load the model
 model_file_path = "convlstm_model_89.h5"  # Adjust the path as necessary
 try:
+    # Include the custom_objects in the load_model function
     convlstm_model = load_model(model_file_path, custom_objects=custom_objects)
 except Exception as e:
     st.error(f"Failed to load the model due to: {e}")
