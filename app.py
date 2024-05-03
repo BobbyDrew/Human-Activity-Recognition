@@ -52,6 +52,7 @@ IMAGE_WIDTH = 64
 SEQUENCE_LENGTH = 20
 CLASSES_LIST = ["Biking", "Diving", "Golf Swing", "Pizza Tossing"]
 
+
 def download_youtube_video(youtube_url, output_directory):
     yt = YouTube(youtube_url)
     stream = yt.streams.get_highest_resolution()
