@@ -1,4 +1,3 @@
-# Import necessary libraries
 import sys
 
 # Check if the Python version is 3.x or later
@@ -21,19 +20,20 @@ from collections import deque
 import os
 import base64
 import tensorflow as tf
-from tensorflow.keras.layers import ConvLSTM2D
 from tensorflow.keras.models import load_model
+from tensorflow.keras.layers import ConvLSTM2D
 from tensorflow.keras.initializers import Orthogonal
 
-# Define custom ConvLSTM2D if needed (not shown here as the problem seems to be with the Orthogonal initializer)
-# Custom ConvLSTM2D class to handle 'time_major' argument
+# Define custom ConvLSTM2D class to handle unrecognized arguments
 class CustomConvLSTM2D(ConvLSTM2D):
     def __init__(self, *args, **kwargs):
         # Remove the unrecognized argument before calling the superclass constructor
         kwargs.pop('time_major', None)
         super(CustomConvLSTM2D, self).__init__(*args, **kwargs)
-# Define the correct handling for Orthogonal custom initializer
+
+# Define custom objects dictionary to include any custom or modified layers
 custom_objects = {
+    'CustomConvLSTM2D': CustomConvLSTM2D,
     'Orthogonal': Orthogonal(gain=1.0, seed=None)
 }
 
