@@ -24,7 +24,7 @@ import base64
 from tensorflow.keras.models import load_model
 
 # Load the model
-model_file_path = "convlstm_model_86.h5"  # Adjust the path as necessary
+model_file_path = "convlstm_model_89.h5"  # Adjust the path as necessary
 try:
     convlstm_model = load_model(model_file_path)
 except Exception as e:
