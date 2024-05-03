@@ -4,7 +4,7 @@ import sys
 # Check if the Python version is 3.x or later
 if sys.version_info[0] >= 3:
     import io
-    
+
     # Set UTF-8 encoding for stdout and stderr
     sys.stdout = io.TextIOWrapper(sys.stdout.detach(), encoding='utf-8')
     sys.stderr = io.TextIOWrapper(sys.stderr.detach(), encoding='utf-8')
@@ -20,12 +20,22 @@ import numpy as np
 from collections import deque
 import os
 import base64
+import tensorflow as tf
+from tensorflow.keras.layers import ConvLSTM2D
 from tensorflow.keras.models import load_model
-from tensorflow.keras.initializers import Orthogonal  # Import Orthogonal
 
-# Load the model with custom object
+# Custom ConvLSTM2D layer to handle potential custom parameters like 'time_major'
+class CustomConvLSTM2D(ConvLSTM2D):
+    def __init__(self, *args, **kwargs):
+        # Remove the unrecognized argument before calling the super class constructor
+        kwargs.pop('time_major', None)
+        super(CustomConvLSTM2D, self).__init__(*args, **kwargs)
+
+# Custom objects dictionary to include any custom or modified layers
+custom_objects = {'CustomConvLSTM2D': CustomConvLSTM2D}
+
+# Load the model
 model_file_path = "convlstm_model_89.h5"  # Adjust the path as necessary
-custom_objects = {'Orthogonal': Orthogonal(gain=1.0, seed=None)}  # Define custom objects
 try:
     convlstm_model = load_model(model_file_path, custom_objects=custom_objects)
 except Exception as e:
