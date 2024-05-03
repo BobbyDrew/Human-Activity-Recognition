@@ -11,7 +11,7 @@ from tensorflow.keras.initializers import Orthogonal
 # Define custom objects if your model uses any
 custom_objects = {'Orthogonal': Orthogonal(gain=1.0, seed=None)}
 
-# Load the model, ensuring the path is accessible in your deployment environment
+# Attempt to load the model
 model_file_path = "convlstm_model_89.h5"
 try:
     convlstm_model = load_model(model_file_path, custom_objects=custom_objects)
@@ -19,7 +19,7 @@ except Exception as e:
     print(f"Error loading the model: {e}")
     convlstm_model = None  # Handle cases where the model isn't loaded
 
-# Define constants
+# Constants
 IMAGE_HEIGHT = 64
 IMAGE_WIDTH = 64
 SEQUENCE_LENGTH = 20
@@ -32,12 +32,8 @@ def download_youtube_video(youtube_url, output_directory):
     stream.download(output_directory)
     return output_file_path, yt.title
 
-def perform_action_recognition(video_file_path, output_file_path):
+def perform_action_recognition(video_file_path, output_video_file_path):
     video_reader = cv2.VideoCapture(video_file_path)
-    original_video_width = int(video_reader.get(cv2.CAP_PROP_FRAME_WIDTH))
-    original_video_height = int(video_reader.get(cv2.CAP_PROP_FRAME_HEIGHT))
-    video_writer = cv2.VideoWriter(output_file_path, cv2.VideoWriter_fourcc(*'mp4v'),
-                                   int(video_reader.get(cv2.CAP_PROP_FPS)), (original_video_width, original_video_height))
     frames_queue = deque(maxlen=SEQUENCE_LENGTH)
 
     while video_reader.isOpened():
@@ -49,25 +45,17 @@ def perform_action_recognition(video_file_path, output_file_path):
         frames_queue.append(normalized_frame)
 
         if len(frames_queue) == SEQUENCE_LENGTH:
-            predicted_labels_probabilities = convlstm_model.predict(np.expand_dims(frames_queue, axis=0))[0]
-            predicted_label = np.argmax(predicted_labels_probabilities)
-            predicted_class_name = CLASSES_LIST[predicted_label]
-            annotate_frame(frame, predicted_class_name)
-
-        video_writer.write(frame)
+            if convlstm_model is not None:
+                predicted_labels_probabilities = convlstm_model.predict(np.expand_dims(frames_queue, axis=0))[0]
+                predicted_label = np.argmax(predicted_labels_probabilities)
+                predicted_class_name = CLASSES_LIST[predicted_label]
+                annotate_frame(frame, predicted_class_name)
 
     video_reader.release()
-    video_writer.release()
-    return output_file_path
+    return output_video_file_path
 
 def annotate_frame(frame, text):
     cv2.putText(frame, text, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
-    text_size = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, 1, 2)[0]
-    text_x, text_y = 10, 30
-    padding = 5
-    box_coords = ((text_x, text_y + padding), (text_x + text_size[0] + padding * 2, text_y - text_size[1] - padding))
-    cv2.rectangle(frame, box_coords[0], box_coords[1], (0, 0, 0), -1)
-    cv2.putText(frame, text, (text_x + padding, text_y), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
 
 def get_binary_file_downloader_html(file_path, title="Download File"):
     with open(file_path, "rb") as f:
@@ -90,8 +78,7 @@ def main():
 
 def show_overview():
     st.header("Project Overview")
-    st.write("This project aims to predict human activity from videos using a convolutional LSTM model. "
-             "Activities such as Biking, Diving, Golf Swing, and Pizza Tossing can be recognized.")
+    st.write("This project aims to predict human activity from videos using a convolutional LSTM model.")
 
 def handle_youtube_upload():
     youtube_url = st.text_input("Enter the YouTube URL:")
@@ -100,7 +87,8 @@ def handle_youtube_upload():
         os.makedirs(test_videos_directory, exist_ok=True)
         video_file_path, video_title = download_youtube_video(youtube_url, test_videos_directory)
         st.success(f"Download complete! Video saved as: {video_title}.mp4")
-        output_video_file_path = perform_video_recognition(test_videos_directory, video_file_path, video_title)
+        output_video_file_path = perform_action_recognition(video_file_path, video_file_path.replace('.mp4', '-Output.mp4'))
+        st.markdown(get_binary_file_downloader_html(output_video_file_path, "Download Predicted Video"), unsafe_allow_html=True)
 
 def handle_local_upload():
     uploaded_file = st.file_uploader("Upload a video", type=['mp4'])
@@ -111,13 +99,8 @@ def handle_local_upload():
         with open(video_file_path, "wb") as f:
             f.write(uploaded_file.read())
         st.success(f"You uploaded: {uploaded_file.name}")
-        output_video_file_path = perform_video_recognition(test_videos_directory, video_file_path, uploaded_file.name)
-
-def perform_video_recognition(directory, video_file_path, title):
-    output_video_file_path = f'{directory}/{title}-Output-SeqLen{SEQUENCE_LENGTH}.mp4'
-    output_video_file_path = perform_action_recognition(video_file_path, output_video_file_path)
-    st.success("Prediction complete! You can download the output video below.")
-    st.markdown(get_binary_file_downloader_html(output_video_file_path, "Download Predicted Video"), unsafe_allow_html=True)
+        output_video_file_path = perform_action_recognition(video_file_path, video_file_path.replace('.mp4', '-Output.mp4'))
+        st.markdown(get_binary_file_downloader_html(output_video_file_path, "Download Predicted Video"), unsafe_allow_html=True)
 
 if __name__ == "__main__":
     main()
